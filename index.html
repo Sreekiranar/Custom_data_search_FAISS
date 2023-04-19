@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom data search using Sentence Transformers and FAISS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4285f4;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Custom data search using Sentence Transformers and FAISS</h1>
+
+    <h2>Upload Rules or Pointers </h2>
+    <form id="upload-form" enctype="multipart/form-data">
+        <input type="file" id="upload" accept=".txt" required>
+        <span id="upload-status" style="display: none;">&check; Uploaded successfully</span>
+        <div id="spinner" class="spinner" style="display: none;"></div>
+    </form>
+
+    <h2>Ask a Query</h2>
+    <form id="query-form">
+        <textarea name="query" id="query" cols="30" rows="5" placeholder="Enter your query" required></textarea>
+        <button type="submit">Submit</button>
+    </form>
+
+    <h2>Results</h2>
+    <div id="results">
+        <h3>Relevant Rules:</h3>
+        <ul id="relevant-rules"></ul>
+        <h3>Summary:</h3>
+        <p id="summary"></p>
+        <h3>Answer:</h3>
+        <p id="answer"></p>
+    </div>
+
+    <script>
+        document.getElementById("upload").addEventListener("change", async function () {
+            document.getElementById("spinner").style.display = "block";
+
+            const file = this.files[0];
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch("/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (response.ok) {
+                document.getElementById("spinner").style.display = "none";
+                document.getElementById("upload-status").style.display = "inline";
+            } else {
+                alert("Error uploading file");
+            }
+        });
+
+        document.getElementById("query-form").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            document.getElementById("spinner").style.display = "block";
+
+            const query = document.getElementById("query").value;
+            const response = await fetch("/query", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ query }),
+            });
+
+            if (response.ok) {
+                document.getElementById("spinner").style.display = "none";
+                const data = await response.json();
+                displayResults(data);
+            } else {
+                alert("Error submitting query");
+            }
+        });
+
+        function displayResults(data) {
+            const summaryElement = document.getElementById("summary");
+            const answerElement = document.getElementById("answer");
+            summaryElement.textContent = data.summary;
+            answerElement.textContent = data.answer;
+        }
+    </script>
+</body>
+</html>

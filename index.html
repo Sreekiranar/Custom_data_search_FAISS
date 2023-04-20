@@ -25,9 +25,9 @@
     </style>
 </head>
 <body>
-    <h1>Custom data search using Sentence Transformers and FAISS</h1>
+    <h1>Filtered Relevant context OpenAPI Prompt</h1>
 
-    <h2>Upload Rules or Pointers </h2>
+    <h2>Upload the text file to search from </h2>
     <form id="upload-form" enctype="multipart/form-data">
         <input type="file" id="upload" accept=".txt" required>
         <span id="upload-status" style="display: none;">&check; Uploaded successfully</span>
@@ -44,10 +44,8 @@
     <div id="results">
         <h3>Relevant Rules:</h3>
         <ul id="relevant-rules"></ul>
-        <h3>Summary:</h3>
-        <p id="summary"></p>
-        <h3>Answer:</h3>
-        <p id="answer"></p>
+        <h3>OpenAI Answer:</h3>
+        <p id="openai-answer"></p>
     </div>
 
     <script>
@@ -94,10 +92,18 @@
         });
 
         function displayResults(data) {
-            const summaryElement = document.getElementById("summary");
-            const answerElement = document.getElementById("answer");
-            summaryElement.textContent = data.summary;
-            answerElement.textContent = data.answer;
+            const relevantRulesElement = document.getElementById("relevant-rules");
+            const openaiAnswerElement = document.getElementById("openai-answer");
+            relevantRulesElement.innerHTML = "";
+            openaiAnswerElement.innerHTML = "";
+
+            data.relevant_rules.forEach((rule) => {
+                const li = document.createElement("li");
+                li.textContent = rule;
+                relevantRulesElement.appendChild(li);
+            });
+
+            openaiAnswerElement.textContent = data.answer_openai;
         }
     </script>
 </body>

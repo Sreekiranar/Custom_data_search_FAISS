@@ -1,29 +1,27 @@
 import os
+import re
 import faiss
 import json
+import openai
+import pdfplumber
 import numpy as np
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from sentence_transformers import SentenceTransformer
-from transformers import BartForConditionalGeneration, BartTokenizer
 from transformers import BertTokenizer, BertForQuestionAnswering
-
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
+
+
+# Set your OpenAI API key
+openai.api_key = "your_openai_api_key"
 
 model = SentenceTransformer("paraphrase-distilroberta-base-v1")
 index = None
 rules = []
 rules_embeddings = []
-
-# Initialize the summarization model and tokenizer
-summarization_model = BartForConditionalGeneration.from_pretrained("facebook/bart-large-cnn")
-summarization_tokenizer = BartTokenizer.from_pretrained("facebook/bart-large-cnn")
-
-# Initialize the question-answering model and tokenizer
-qa_model = BertForQuestionAnswering.from_pretrained("bert-large-uncased-whole-word-masking-finetuned-squad")
-qa_tokenizer = BertTokenizer.from_pretrained("bert-large-uncased-whole-word-masking-finetuned-squad")
 
 # Index creation
 index = faiss.IndexFlatL2(768)  # 768 is the dimension of the embeddings
@@ -43,6 +41,7 @@ def upload():
     filename = secure_filename(file.filename)
     file.save(filename)
 
+    rules = []
     with open(filename, "r") as f:
         rules = [line.strip() for line in f.readlines()]
 
@@ -55,6 +54,7 @@ def upload():
     os.remove(filename)
 
     return jsonify({"message": "Rules uploaded and indexed successfully"})
+
 
 @app.route("/query", methods=["POST"])
 def query():
@@ -79,35 +79,32 @@ def query():
     print(f"Search results (Indices): {I}")
 
     relevant_rules = [rules[i] for i in I[0]]
-    summary = summarize_rules(relevant_rules)
 
-    # Answer the query using the relevant rules
-    answer = answer_query(query, relevant_rules)
+    answer_openai = answer_query_openai_api(query, relevant_rules)
 
-    return jsonify({"relevant_rules": relevant_rules, "summary": summary, "answer": answer})
-
-
-def summarize_rules(relevant_rules):
-    inputs = summarization_tokenizer(relevant_rules, return_tensors="pt", truncation=True, padding=True, max_length=1024)
-    summary_ids = summarization_model.generate(inputs["input_ids"], num_beams=4, max_length=150, early_stopping=True)
-    summary = [summarization_tokenizer.decode(summary_id, skip_special_tokens=True, clean_up_tokenization_spaces=False) for summary_id in summary_ids]
-    return summary
-
-def answer_query(question, relevant_rules):
+    return jsonify({
+        "relevant_rules": relevant_rules,
+        "answer_openai": answer_openai
+    })
+def answer_query_openai_api(query, relevant_rules):
     context = " ".join(relevant_rules)
     
-    # Truncate the context if the combined length is too long
-    max_context_length = 512 - len(qa_tokenizer.tokenize(question)) - 3
-    context_tokens = qa_tokenizer.tokenize(context)
-    if len(context_tokens) > max_context_length:
-        context_tokens = context_tokens[:max_context_length]
-        context = qa_tokenizer.convert_tokens_to_string(context_tokens)
+    prompt = f"Question: {query}\nI need an accurate and compact answer from the following information:\n{context}\n\nAnswer:"
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=prompt,
+        temperature=0.5,
+        max_tokens=100,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0,
+        stop=["\n"],
+    )
 
-    inputs = qa_tokenizer(question, context, return_tensors="pt", truncation=True, padding="max_length", max_length=512)
-    start_positions = qa_model(**inputs).start_logits.argmax(dim=-1).item()
-    end_positions = qa_model(**inputs).end_logits.argmax(dim=-1).item()
-    answer = qa_tokenizer.decode(inputs["input_ids"][0][start_positions:end_positions+1], skip_special_tokens=True)
+    answer = response.choices[0].text.strip()
+    print(f"answer={answer}")
     return answer
+
 
 if __name__ == "__main__":
     app.run(debug=True)

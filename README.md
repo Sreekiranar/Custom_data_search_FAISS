@@ -6,6 +6,8 @@ This solution comes in handy as a simple DIY experiment, complete with a user in
 
 The approach involves embedding the large file text using Sentence Transformers. Next, FAISS is employed to select the top N-matched data points, pass the relevant information to the OpenAI API, and ultimately return the appropriate responses. This method ensures a more efficient and accurate retrieval of information, tailored to specific needs.
 
+![Snapshot of UI](screenshot.png)
+
 ## Table of Contents
 
 1. [Getting Started](#getting-started)

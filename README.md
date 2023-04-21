@@ -34,8 +34,8 @@ The approach involves embedding the large file text using Sentence Transformers.
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/Sreekiranar/GPT_enabled_google_ui
-    cd cd GPT_enabled_google_ui
+    git clone https://github.com/Sreekiranar/Filtered-Relevant-context-OpenAPI-Prompt.git
+    cd Filtered-Relevant-context-OpenAPI-Prompt
     ```
 
 2. Install the required dependencies:

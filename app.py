@@ -1,7 +1,5 @@
 import os
-import re
 import faiss
-import json
 import openai
 import pdfplumber
 import numpy as np
@@ -9,11 +7,11 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from sentence_transformers import SentenceTransformer
-from transformers import BertTokenizer, BertForQuestionAnswering
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
-
 
 # Set your OpenAI API key
 openai.api_key = "your_openai_api_key"
@@ -26,12 +24,16 @@ rules_embeddings = []
 # Index creation
 index = faiss.IndexFlatL2(768)  # 768 is the dimension of the embeddings
 
+
 @app.route("/")
 def home():
+    """Serve the home page."""
     return send_from_directory(".", "index.html")
+
 
 @app.route("/upload", methods=["POST"])
 def upload():
+    """Upload a file containing rules and index them using SentenceTransformer embeddings."""
     global rules, rules_embeddings, index
 
     if "file" not in request.files:
@@ -42,6 +44,7 @@ def upload():
     file.save(filename)
 
     rules = []
+
     with open(filename, "r") as f:
         rules = [line.strip() for line in f.readlines()]
 
@@ -58,6 +61,7 @@ def upload():
 
 @app.route("/query", methods=["POST"])
 def query():
+    """Answer the user's query using the indexed rules and OpenAI API."""
     global rules, rules_embeddings, index
 
     data = request.get_json()
@@ -86,10 +90,22 @@ def query():
         "relevant_rules": relevant_rules,
         "answer_openai": answer_openai
     })
+
+
 def answer_query_openai_api(query, relevant_rules):
+    """
+    Answer a query using the OpenAI API with the given relevant rules.
+
+    Args:
+        query (str): The query to be answered.
+        relevant_rules (list): A list of relevant rules (strings).
+
+    Returns:
+        str: The answer provided by the OpenAI API.
+    """
     context = " ".join(relevant_rules)
-    
-    prompt = f"Question: {query}\nI need an accurate and compact answer from the following information:\n{context}\n\nAnswer:"
+
+    prompt = f"Question: {query}\nI need an accurate and compact answer from the following information, if not inform:\n{context}\n\nAnswer:"
     response = openai.Completion.create(
         engine="text-davinci-003",
         prompt=prompt,
@@ -108,3 +124,4 @@ def answer_query_openai_api(query, relevant_rules):
 
 if __name__ == "__main__":
     app.run(debug=True)
+

@@ -1,0 +1,8 @@
+flask>=1.1.2
+flask-cors>=3.0.10
+numpy>=1.20.3
+pdfplumber>=0.5.28
+openai>=0.11.3
+sentence-transformers>=2.0.0
+transformers>=4.9.1
+faiss-cpu>=1.7.1

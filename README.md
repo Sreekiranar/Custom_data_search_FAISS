@@ -2,7 +2,7 @@
 
 In order to fully harness the power of Generative AI models, it is crucial to guide them towards the desired outcome. By providing a relevant context to a query, it is possible to obtain better quality results from these models.
 
-This solution comes in handy as a simple DIY experiment, complete with a user interface that allows for inputting a large text and a query. The system then returns responses from OpenAPI, ensuring that only the relevant context is considered as the input.
+This solution comes in handy as a simple DIY experiment, complete with a user interface that allows for inputting a large text/pdf and a query. The system then returns responses from OpenAPI, ensuring that only the relevant context is considered as the input.
 
 The approach involves embedding the large file text using Sentence Transformers. Next, FAISS is employed to select the top N-matched data points, pass the relevant information to the OpenAI API, and ultimately return the appropriate responses. This method ensures a more efficient and accurate retrieval of information, tailored to specific needs.
 
@@ -29,6 +29,7 @@ The approach involves embedding the large file text using Sentence Transformers.
 - Sentence-Transformers
 - Transformers
 - faiss-cpu
+- PyMuPDF
 - An OpenAI API key (Sign up for an account at [OpenAI](https://beta.openai.com/signup/) and obtain an API key)
 
 ### Installation
